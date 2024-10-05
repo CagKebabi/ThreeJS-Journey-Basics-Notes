@@ -239,7 +239,237 @@
 //debugObject.color'ı #a778d8'e geri koyalım.
 
 //Function / Button
-//
+//Bazen, sadece talep üzerine talimatları tetiklemek isteriz. Şu anda, hata ayıklama kullanıcı arayüzümüzde bir yere tıkladığımızda 
+//küpün küçük bir dönüş animasyonu gerçekleştirmesini istiyoruz.
+
+//Bunu, bir fonksiyon içeren bir özelliği tweak'e göndererek yapabiliriz. Ne yazık ki, bu, bir fonksiyonun kendi başına böyle 
+//oturmasını ve sonra onu lil-gui'ye göndermesini sağlayamayacağımız anlamına gelir:
+
+// const myFunction = () => {
+//     console.log('do something')
+// }
+// gui.add(myFunction, '???')
+
+//Ancak daha önce oluşturduğumuz debugObject nesnesine bir spin özelliği ekleyebilir ve içine bir GSAP animasyonu entegre edebiliriz:
+
+// debugObject.spin = () =>
+//     {
+//         gsap.to(mesh.rotation, { duration: 1, y: mesh.rotation.y + Math.PI * 2 })
+//     }
+
+//Son olarak şu değişikliği ekleyebiliriz debugObject.spin:
+
+// debugObject.spin = () =>
+//     {
+//         // ...
+//     }
+//     gui.add(debugObject, 'spin')
+
+//Bir buton göreceksiniz spin, bu butona tıkladığınızda küpünüz 360° dönecektir.
+
+//GEOMETRİYİ AYARLAMA
+//Geometri alt bölümlerini(subdivision) biraz değiştirmeyi deneyelim mi?
+
+//Öncelikle üçgenleri görselleştirmek için wireframe değerini true olarak ayarlayacağız:
+
+//const material = new THREE.MeshBasicMaterial({ color: '#9c7fe3', wireframe: true })
+
+//BoxGeometry belgelerini kontrol ederseniz, alt bölümü kontrol eden parametrelerin widthSegments, heightSegments ve depthSegments 
+//olarak adlandırıldığını göreceksiniz.
+
+//Geometry.widthSegments'a bir ince ayar eklemeyi deneyelim:
+
+// gui
+//     .add(geometry, 'widthSegments')
+//     .min(1)
+//     .max(20)
+//     .step(1)
+
+//widthSegments geometrinin bir özelliği olmadığı için bir hata alıyoruz.
+
+//widthSegments yalnızca BoxGeometry'yi örneklendirdiğimizde gönderdiğimiz bir parametredir. Tüm geometriyi yalnızca bir kez oluşturmak 
+//için kullanılacaktır.
+
+//İlk olarak, gerçek bir özellik olmadığı için, debugObject nesnesine bir alt bölüm özelliği eklememiz ve ince ayarlarımızı buna 
+//uygulamamız gerekir:
+
+// debugObject.subdivision = 2
+// gui
+//     .add(debugObject, 'subdivision')
+//     .min(1)
+//     .max(20)
+//     .step(1)
+
+//Adını subdivision koyduk, böylece onu üç widthSegments, heightSegments ve depthSegments'in hepsinde kullanabiliriz.
+
+//Sonra, ayar değeri değiştiğinde, eski geometriyi yok edip yepyeni bir tane inşa edeceğiz.
+
+//Bunu yapmak için, önce ayardaki onChange olayını dinleyeceğiz:
+
+// gui
+//     .add(debugObject, 'subdivision')
+//     .min(1)
+//     .max(20)
+//     .step(1)
+//     .onChange(() =>
+//     {
+//         console.log('subdivision changed')
+//     })
+
+
+//Bir geometri oluşturmak CPU için oldukça uzun bir süreç olabilir. Şu anda, kullanıcı aralık ayarını çok fazla sürükleyip bırakırsa 
+//çok fazla tetiklenebilecek olan change olayını dinliyoruz.
+
+//onChange kullanmak yerine, yalnızca değeri ayarlamayı bıraktığımızda tetiklenecek olan onFinishChange kullanacağız:
+
+// gui
+//     .add(debugObject, 'subdivision')
+//     .min(1)
+//     .max(20)
+//     .step(1)
+//     .onFinishChange(() =>
+//     {
+//         console.log('subdivision finished changing')
+//     })
+
+//Bu console.log() yerine, debugObject.subdivision kullanarak yeni bir geometri oluşturabilir ve bunu geometri özelliğine atayarak mesh 
+//ile ilişkilendirebiliriz:
+
+// gui
+//     .add(debugObject, 'subdivision')
+//     .min(1)
+//     .max(20)
+//     .step(1)
+//     .onFinishChange(() =>
+//     {
+//         mesh.geometry = new THREE.BoxGeometry(
+//             1, 1, 1,
+//             debugObject.subdivision, debugObject.subdivision, debugObject.subdivision
+//         )
+//     })
+
+//Ve bu kadar, ama küçük bir hata yaptık. Eski geometriler hala GPU belleğinde bir yerlerde duruyor ve bu da bellek sızıntısı(memory leak) yaratabilir.
+
+//Bunu düzeltmek için, yenisini oluşturmadan önce eski geometride dispose() metodunu çağırabiliriz:
+
+// gui
+//     .add(debugObject, 'subdivision')
+//     .min(1)
+//     .max(20)
+//     .step(1)
+//     .onFinishChange(() =>
+//     {
+//         mesh.geometry.dispose()
+//         mesh.geometry = new THREE.BoxGeometry(
+//             1, 1, 1,
+//             debugObject.subdivision, debugObject.subdivision, debugObject.subdivision
+//         )
+//     })
+
+//FOLDERS
+//Çok daha fazla ince ayar yaptığımızı ve hata ayıklama kullanıcı arayüzünün kalabalıklaşmaya başladığını hayal edelim. addFolder() 
+//metodunu kullanarak bunları klasörlere ayırabiliriz.
+
+//Bir klasör oluşturmak için addFolder()'ı çağırın ve istediğiniz ismi parametre olarak gönderin. Bunu ince ayarlardan önce yaptığınızdan 
+//ve cubeTweaks olarak kaydettiğinizden emin olun:
+
+//const cubeTweaks = gui.addFolder('Awesome cube')
+
+//Daha sonra, ince ayarlar oluşturmak için guı kullanmak yerine cubeTweaks değişkenini kullanın:
+
+// const cubeTweaks = gui.addFolder('Awesome cube')
+
+// cubeTweaks
+//     .add(mesh.position, 'y')
+//     // ...
+
+// cubeTweaks
+//     .add(mesh, 'visible')
+
+// cubeTweaks
+//     .add(material, 'wireframe')
+
+// cubeTweaks
+//     .addColor(material, 'color')
+//     // ...
+
+// // ...
+// cubeTweaks
+//     .add(debugObject, 'spin')
+
+// // ...
+// cubeTweaks
+//     .add(debugObject, 'subdivision')
+//     // ...
+
+//Varsayılan olarak close() metoduyla kapatabilirsiniz:
+
+//const cubeTweaks = gui.addFolder('Awesome cube')
+//cubeTweaks.close()
+
+//GUI KURULUMU
+//lil-gui esnektir ve ondan en iyi şekilde yararlanmak için bazı parametreleri, yöntemleri ve püf noktalarını göreceğiz.
+
+//GENİŞLİK
+//Genişliği, genişlik özelliğine sahip bir nesneyi GUI oluşturucusuna göndererek kontrol edebilirsiniz:
+
+// const gui = new GUI({
+//     width: 300
+// })
+
+//TITLE
+//Panelin üst kısmındaki başlığı title özelliği ile değiştirebilirsiniz:
+
+// const gui = new GUI({
+//     width: 300,
+//     title: 'Nice debug UI'
+// })
+
+//CLOSE FOLDERS
+//Paneldeki tüm klasörleri closeFolders ile kapatabiliriz:
+
+// const gui = new GUI({
+//     width: 300,
+//     title: 'Nice debug UI',
+//     closeFolders: true
+// })
+
+//HIDE
+//hide() metodunu çağırarak paneli tamamen gizleyebilirsiniz:
+
+// const gui = new GUI({
+//     width: 300,
+//     title: 'Nice debug UI',
+//     closeFolders: false,
+// })
+// // gui.close()
+// gui.hide()
+
+//TOGGLING
+//Peki bunu bir kez daha nasıl gösterebiliriz? Bu size kalmış, ancak hızlı bir çözüm keydown olayını dinlemek ve eğer h tuşuysa, 
+//şu anda gizli olup olmadığını belirten _hidden özelliğine göre geçiş yapmak olabilir, bu da bir boolean olarak:
+
+// window.addEventListener('keydown', (event) =>
+//     {
+//         if(event.key == 'h')
+//             gui.show(gui._hidden)
+//     })
+
+//İşte bitirdik. Ancak merak ediyorsanız, daha fazla kurulum ve özellik için lil-gui belgelerine bir göz atın:
+//-Positioning
+//-Having the tweak updated if the property changes
+//-Other types of tweaks like the Select
+//-Etc.
+
+//ÇÖZÜM
+//-Sonraki alıştırmaların belirli anlarında hata ayıklama kullanıcı arayüzümüzü kullanacağız. Ancak, istediğiniz kadar ince ayar eklemekten 
+//çekinmeyin. Pratik yapmak ve yaratıcı şeyler inşa etmeye başlamak için mükemmel bir yoldur.
+
+//İlerledikçe ince ayarlar eklemenizi öneririm. Tüm ince ayarları projenin sonuna eklemeyi düşünürseniz, muhtemelen hiç ince ayar yapmadan 
+//ve fırsatları kaçırarak sonuçlanırsınız.
+
+//Sonraki derslerin bazılarının lil-gui yerine dat.GUI kullanılarak kaydedildiğini unutmayın. Çok büyük bir fark yaratmaz ve sorunsuz bir 
+//şekilde takip edebilmelisiniz.
 
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
@@ -251,10 +481,27 @@ import gsap from 'gsap'
 /**
  * Debug
  */
-const gui = new GUI()
+const gui = new GUI({
+    width:300, //guı panelimizin genişliğini 300px yaptık.
+    title: 'Nice debug UI', //paneldeki ana dosyamıza isim verdik.
+    closeFolders: true //tüm dosyalar varsayılan olarak kapalı gelir.
+})
+//gui.close()//gui dosyamız varsayılan olarak kapalı gelir.
+//gui.hide()//panelimizi tamamen gizler
+
+//H tuşuna bastığıımızada panelin gizlemek veya açmak istiyoruz.
+window.addEventListener('keydown', (event) =>
+    {
+        if(event.key == 'h')
+            gui.show(gui._hidden)
+    })
+
+//
 const debugObject = {}
 
 debugObject.color = '#a778d8'
+const cubeTweaks = gui.addFolder('Awesome cube') //GUI Panelinde Awesome cube adında bir dosya oluşturduk ve küp ile ilgili işlemlerimizi bu dosya içine aldık. Aşağıda guı yerine cubeTweaks yazarak bunu yaptık.
+//cubeTweaks.close()//Dosya varsayılan olarak sayfa ilk açıldığında kapalı olur. Sonrasında üstüne tıklayarak açabiliriz.
 
 /**
  * Base
@@ -275,23 +522,54 @@ scene.add(mesh)
 
 //GUI AYARLARI
 // gui.add(mesh.position, 'y', - 3, 3, 0.01)
-gui.add(mesh.position, 'y')
+cubeTweaks.add(mesh.position, 'y')
     .min(- 3)
     .max(3)
     .step(0.01)
     .name('elevation')
 
-gui.add(mesh, 'visible')
+cubeTweaks.add(mesh, 'visible')
 
-gui.add(material, 'wireframe')
+cubeTweaks.add(material, 'wireframe')
 
-gui.addColor(debugObject, 'color').onChange((value) => { //material debugObject olarak değiştirildi
+cubeTweaks.addColor(debugObject, 'color').onChange((value) => { //material debugObject olarak değiştirildi
     // console.log('value has changed')
     // console.log(material.color)
     // console.log(value)
     // console.log(value.getHexString())
     material.color.set(debugObject.color)
 })
+
+debugObject.spin = () =>{
+    gsap.to(mesh.rotation, { duration: 1, y: mesh.rotation.y + Math.PI * 2 })
+}
+
+cubeTweaks.add(debugObject, 'spin')
+
+// gui
+//     .add(geometry, 'widthSegments')
+//     .min(1)
+//     .max(20)
+//     .step(1)
+
+debugObject.subdivision = 2
+cubeTweaks
+    .add(debugObject, 'subdivision')
+    .min(1)
+    .max(20)
+    .step(1)
+    .onFinishChange(() =>{
+        mesh.geometry.dispose()
+        mesh.geometry = new THREE.BoxGeometry(
+            1, 1, 1,
+            debugObject.subdivision, debugObject.subdivision, debugObject.subdivision
+        )
+    })
+    // .onChange(() =>
+    //     {
+    //         console.log('subdivision changed')
+    //     })
+
 //-----
 // const myObject = {
 //     myVariable: 1337
