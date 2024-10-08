@@ -348,6 +348,108 @@
 
 //Gördüğünüz eserlere moiré desenleri denir ve bunlardan genellikle kaçınmak istersiniz.
 
+
+//BÜYÜTME(MAGNIFICATION) FILTER
+//Büyütme filtresi, tıpkı küçültme filtresi gibi çalışır, ancak texture pikselleri render'ın piksellerinden daha büyük olduğunda. 
+//Başka bir deyişle, texture kapladığı yüzey için çok olduğunda.
+
+//Sonucu, static/textures/ klasöründe bulunan checkerboard-8x8.png dokusunu kullanarak görebilirsiniz:
+
+//const colorTexture = textureLoader.load('/textures/checkerboard-8x8.png')
+
+//Texture, çok büyük bir yüzeyde çok küçük bir doku olduğu için bulanıklaşıyor.
+
+//Bunun korkunç göründüğünü düşünebilirsiniz, ancak muhtemelen en iyisi budur. Etki çok abartılı değilse, kullanıcı muhtemelen bunu 
+//fark etmeyecektir.
+
+//magFilter özelliğini kullanarak dokunun büyütme filtresini değiştirebilirsiniz.
+
+//Yalnızca iki olası değer vardır:
+
+//-THREE.NearestFilter
+//-THREE.LinearFilter
+
+//Varsayılan THREE.LinearFilter'dır.
+
+//THREE.NearestFilter'ı test ederseniz, temel görüntünün korunduğunu ve pikselli bir doku elde ettiğinizi göreceksiniz:
+
+//colorTexture.magFilter = THREE.NearestFilter
+
+//Pikselli dokulara sahip bir Minecraft stilini tercih ediyorsanız avantajlı olabilir.
+
+//Sonucu static/textures/ klasöründe bulunan minecraft.png dokusunu kullanarak görebilirsiniz:
+
+//const colorTexture = textureLoader.load('/textures/minecraft.png')
+
+//Tüm bu filtreler hakkında son bir söz, THREE.NearestFilter'ın diğerlerinden daha ucuz olduğudur ve onu kullanırken daha iyi performanslar 
+//elde etmelisiniz.
+
+//Sadece minFilter özelliği için mipmap'leri kullanın. THREE.NearestFilter'ı kullanıyorsanız, mipmap'lere ihtiyacınız yoktur ve bunları 
+//colorTexture.generateMipmaps = false ile devre dışı bırakabilirsiniz:
+
+// colorTexture.generateMipmaps = false
+// colorTexture.minFilter = THREE.NearestFilter
+
+//Bu, GPU'nun yükünü biraz azaltacaktır.
+
+//TEXTURE FORMATI VE OPTİMİZASYONU
+//Texturelarınızı hazırlarken, 3 önemli unsuru aklınızda tutmalısınız:
+
+//-Ağırlık (Weight)
+//-Boyut (veya çözünürlük) (Size)
+//-Veriler (Data)
+
+//WEIGHT
+//Web sitenize gelen kullanıcıların bu textureları indirmesi gerekeceğini unutmayın. Web'de kullandığımız .jpg (kayıplı sıkıştırma 
+//ancak genellikle daha hafif) veya .png (kayıpsız sıkıştırma ancak genellikle daha ağır) gibi çoğu resim türünü kullanabilirsiniz.
+
+//Kabul edilebilir ancak mümkün olduğunca hafif bir resim elde etmek için her zamanki yöntemleri uygulamaya çalışın. 
+//texture boyutlarını azaltmak için TinyPNG (jpg ile de çalışır) gibi sıkıştırma web sitelerini veya herhangi bir yazılımı kullanabilirsiniz.
+
+//SIZE
+//Kullandığınız textureların her pikseli, görüntünün ağırlığından bağımsız olarak GPU'da depolanmak zorunda kalacaktır. 
+//Ve sabit diskiniz gibi, GPU'nun da depolama sınırlamaları vardır. Daha da kötüsü, otomatik olarak oluşturulan mipmapping depolanması 
+//gereken piksel sayısını artırır.
+
+//Resimlerinizin boyutunu mümkün olduğunca küçültmeye çalışın.
+
+//Mipmapping hakkında söylediklerimizi hatırlarsanız, Three.js, 1x1 doku elde edene kadar dokunun yarı yarıya daha küçük bir versiyonunu 
+//tekrar tekrar üretecektir. Bu nedenle, doku genişliğiniz ve yüksekliğiniz 2'nin bir kuvveti olmalıdır. Bu, Three.js'nin doku boyutunu 
+//2'ye bölebilmesi için zorunludur.
+
+//Bazı örnekler: 512x512, 1024x1024 veya 512x2048
+
+//512, 1024 ve 2048, 1'e ulaşana kadar 2'ye bölünebilir.
+
+//2'nin kuvveti değerinden farklı bir genişliğe veya yüksekliğe sahip bir doku kullanıyorsanız, Three.js onu 2'nin kuvvetine en yakın 
+//sayıya kadar uzatmaya çalışacaktır, bu da görsel olarak kötü sonuçlara yol açabilir ve ayrıca konsolda bir uyarı alırsınız.
+
+//DATA
+//Henüz test etmedik çünkü önce görmemiz gereken başka şeyler var, ancak texturelar şeffaflığı destekler. Bildiğiniz gibi, jpg dosyalarında 
+//alfa kanalı yoktur, bu nedenle bir png kullanmayı tercih edebilirsiniz.
+
+//Veya gelecekteki bir derste göreceğimiz gibi bir alfa haritası kullanabilirsiniz.
+
+//Normal bir texture (mor olan) kullanıyorsanız, muhtemelen her pikselin kırmızı, yeşil ve mavi kanalları için tam değerlere sahip olmak 
+//isteyeceksiniz, aksi takdirde görsel aksaklıklarla karşılaşabilirsiniz. Bunun için, kayıpsız sıkıştırması değerleri koruyacağından bir 
+//png kullanmanız gerekecektir.
+
+//TEXTURELARI NEREDEN BULABİLİRİZ?
+//Ne yazık ki, mükemmel textureları bulmak her zaman zordur. Birçok web sitesi vardır, ancak texturelar her zaman ücretiz olmayabilir ve 
+//ödeme yapmanız gerekebilir.
+
+//Muhtemelen web'de arama yaparak başlamak iyi bir fikirdir. Sık sık girdiğim bazı web siteleri şunlardır.
+
+//https://www.poliigon.com/
+//https://3dtextures.me/
+//https://www.arroway-textures.ch/
+
+//Kişisel kullanım için değilse, dokuyu kullanma hakkınız olduğundan her zaman emin olun.
+
+//Ayrıca, Photoshop gibi fotoğraflar ve 2D yazılımlar veya Substance Designer gibi yazılımlarla prosedürel dokular kullanarak kendi 
+//dokunuzu da oluşturabilirsiniz.
+
+
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import "./style.css"
@@ -384,8 +486,10 @@ loadingManager.onError = () =>
     console.log('loading error')
 }
 const textureLoader = new THREE.TextureLoader(loadingManager) //loadingManager parametresini girerek loading managerı aktif hale getirdik
-const colorTexture = textureLoader.load('/textures/door/color.jpg')
-// const colorTexture = textureLoader.load('/textures/checkerboard-1024x1024.png')
+// const colorTexture = textureLoader.load('/textures/door/color.jpg')
+// const colorTexture = textureLoader.load('/textures/checkerboard-1024x1024.png') //minification filter için texture
+// const colorTexture = textureLoader.load('/textures/checkerboard-8x8.png') //magnification filter için texture
+const colorTexture = textureLoader.load('/textures/minecraft.png') //magnification filter için texture
 colorTexture.colorSpace = THREE.SRGBColorSpace
 //texturea transform repeat özelliği uygulama
 colorTexture.repeat.x = 2
@@ -405,7 +509,10 @@ colorTexture.center.y = 0.5
 colorTexture.wrapS = THREE.MirroredRepeatWrapping
 colorTexture.wrapT = THREE.MirroredRepeatWrapping
 //Textureda minification filtresi kullanma
+colorTexture.generateMipmaps = false //gpu yükünü azaltmak için nearestFilter kullanırken generateMipmapsi devre dışı bırakmamız daha iyidir.
 colorTexture.minFilter = THREE.NearestFilter
+////Textureda magnification filtresi kullanma
+colorTexture.magFilter = THREE.NearestFilter
 
 const alphaTexture = textureLoader.load('/textures/door/alpha.jpg')
 const heightTexture = textureLoader.load('/textures/door/height.jpg')
