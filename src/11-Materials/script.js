@@ -434,10 +434,276 @@
 //Ve işte bu kadar. Artık metalliği ve pürüzlülüğü istediğiniz gibi değiştirebilirsiniz.
 
 //Adding an environment map
+//MeshStandardMaterial ile işimiz bitmedi, ancak daha fazla ilerlemeden önce, ortam haritası (environment map) adı verilen ek bir özellik 
+//ekleyeceğiz.
+
+//Ortam haritası, sahnenin etrafındaki şeylerin bir görüntüsü gibidir ve /static/11-Materials/textures/environmentMap/2k.hdr'de bulabilirsiniz. 
+//İşletim sisteminiz destekliyorsa önizlemesini görebilirsiniz. Desteklemiyorsa endişelenmeyin, çünkü önemli değil ve Three.js bunu 
+//halledebilir.
+
+//Mevcut Yönlü Işık ve Ortam Işığı'na ek olarak, nesnelerinize yansıma, kırılma ve ayrıca aydınlatma eklemek için kullanabilirsiniz.
+
+//Işıklar konusunda olduğu gibi, bunu da ayrıntılı olarak ele almayacağız çünkü buna ayrılmış bir ders var, bu derste kendi 
+//environment maplarinizi oluşturmanın birçok yolunu da öğreneceksiniz.
+
+//Gelecek çevre haritasını değerlendirebilmemiz için öncelikle MeshStandardMaterial'in metalliğini ve roughnessini değiştirerek başlayalım:
+
+// const material = new THREE.MeshStandardMaterial()
+// material.metalness = 0.7
+// material.roughness = 0.2
+
+//Daha önce belirtilen ortam haritası dosyasını yüklemek için RGBELoader'ı kullanmamız gerekir. RGBELoader'ı 
+//three/examples/jsm/loaders/RGBELoader.js'den içe aktarın:
+
+//import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
+
+//Daha sonra, bunu rgbeLoader olarak örneklendirmemiz ve load() metodunu kullanarak ./textures/environmentMap/2k.hdr dosyasını 
+//yüklememiz gerekiyor:
+
+// /**
+//  * Environment map
+//  */
+// const rgbeLoader = new RGBELoader()
+// rgbeLoader.load('./textures/environmentMap/2k.hdr', (environmentMap) =>
+// {
+//     console.log(environmentMap)
+// })
+
+//textureLoader'ın aksine, ikinci parametre olarak bir geri çağırma fonksiyonu göndermemiz gerekiyor. Yüklenen ortam haritasını o 
+//fonksiyonun parametresi olarak alabiliriz.
+
+//Bunu sahnemize uygulayabilmek için, mapping özelliğini THREE.EquirectangularReflectionMapping olarak değiştirmemiz ve ardından bunu 
+//sahnenin arka plan ve ortam özelliklerine atamamız gerekir:
+
+// rgbeLoader.load('./textures/environmentMap/2k.hdr', (environmentMap) =>
+//     {
+//         environmentMap.mapping = THREE.EquirectangularReflectionMapping
+    
+//         scene.background = environmentMap
+//         scene.environment = environmentMap
+//     })
+
+//Çevrenin geometrinin yüzeyinde yansıdığını görmelisiniz. Farklı sonuçlar için metalliği ve pürüzlülüğü ayarlamayı deneyin.
+
+//Şimdilik yalnızca çevre haritasını eklemiş olsak da, MeshLambertMaterial ve MeshPhongMaterial ile de uyumludur.
+
+//Ve çevre haritası kendi başına yeterli olduğundan, AmbientLight ve PointLight'ı kaldıracağız veya yorum satırına alacağız:
+
+// // const ambientLight = new THREE.AmbientLight(0xffffff, 1)
+// // scene.add(ambientLight)
+
+// // const pointLight = new THREE.PointLight(0xffffff, 30)
+// // pointLight.position.x = 2
+// // pointLight.position.y = 3
+// // pointLight.position.z = 4
+// // scene.add(pointLight)
+
+//Diğer Propertyler
+//MeshStandardMaterial'in diğer özelliklerine devam edelim.
+
+//Map özelliği basit bir texture uygulamanıza olanak tanır. doorColorTexture'ı kullanabilirsiniz:
+
+//aoMap özelliği (kelimenin tam anlamıyla "ortam kapanma haritası"ambient occlusion map), texture karanlık olduğunda gölgeler ekleyecektir.
+
+//Ardından, doorAmbientOcclusionTexture dokusunu kullanarak aoMap'i ekleyin ve aoMapIntensity özelliğini kullanarak yoğunluğu kontrol edin:
+
+// material.aoMap = doorAmbientOcclusionTexture
+// material.aoMapIntensity = 1
+
+//Çatlaklar daha koyu görünmelidir, bu kontrast yaratır ve boyut ekler.
+
+//aoMap'in yalnızca AmbientLight, environment map ve daha sonraki bir derste göreceğiniz HemisphereLight tarafından oluşturulan ışığı 
+//etkilediğini unutmayın.
+
+//displacementMap özelliği, gerçek rahatlama oluşturmak için köşeleri hareket ettirecektir:
+
+//material.displacementMap = doorHeightTexture
+
+//Korkunç görünmeli. Bunun nedeni geometrilerimizdeki tepe noktalarının eksikliği ve yer değiştirmenin çok güçlü olmasıdır.
+
+//Geometrilere daha fazla subdivision ekleyin:
+
+// new THREE.SphereGeometry(0.5, 64, 64),
+
+// // ...
+
+// new THREE.PlaneGeometry(1, 1, 100, 100),
+
+// // ...
+
+// new THREE.TorusGeometry(0.3, 0.2, 64, 128),
+
+//Yükseltiler daha kesin görünüyor, ancak çok fazla güçlü. Bunu yer displacementScale  özelliğiyle kontrol edebiliriz:
+
+//material.displacementScale = 0.1
+
+//Tüm geometri için tekdüze metallik ve roughness belirtmek yerine, metalnessMap ve roughnessMap'i kullanabiliriz:
+
+// material.metalnessMap = doorMetalnessTexture
+// material.roughnessMap = doorRoughnessTexture
+
+//Yansıma garip görünüyor çünkü metalness ve roughness özellikleri hala metalnessMap ve roughnessMap'i etkiliyor. Düzgün çalışması için 
+//hem metalness'i hem de roughness'i 1'e ayarlamamız gerekiyor:
+
+// material.metalness = 1
+// material.roughness = 1
+
+// Artık kapının metal kısımlarındaki yansımaların keyfini çıkarabiliriz. Dokunun, ahşapta vernik kaplama varmış gibi görünmesi için 
+//yapıldığını unutmayın, bu yüzden hala bazı yansımaları algılayabiliriz.
+
+// normalMap, normal yönelimi taklit edecek ve subdivisiona bakılmaksızın yüzeye ayrıntılar ekleyecektir:
+
+//material.normalMap = doorNormalTexture
+
+//NormalScale özelliği ile normal yoğunluğu değiştirebilirsiniz. Dikkatli olun, bu bir Vector2:
+
+//material.normalScale.set(0.5, 0.5)
+
+//Ve son olarak, alphaMap özelliğini kullanarak alfayı kontrol edebilirsiniz. Transparent özelliğini true olarak ayarlamayı unutmayın:
+
+// material.transparent = true
+// material.alphaMap = doorAlphaTexture
+
+//MeshPhysicalMaterial 
+//MeshPhysicalMaterial , MeshStandardMaterial ile aynıdır ancak şeffaf kaplama, parlaklık, yanardönerlik ve geçirgenlik - 
+//clearcoat, sheen, iridescence, and transmission. gibi ek efektlerin desteğine sahiptir.
+
+//Bu materyali uygulamak için, tüm MeshStandardMaterial'ı, özelliklerini ve ince ayarlarını kopyalayın, ardından sınıfı 
+//MeshPhysicalMaterial ile değiştirin. MeshStandardMaterial'ı yorumlamayı unutmayın:
+
+// /**
+//  * MeshPhysicalMaterial
+//  */
+// // Base material
+// const material = new THREE.MeshPhysicalMaterial()
+// material.metalness = 1
+// material.roughness = 1
+// material.map = doorColorTexture
+// material.aoMap = doorAmbientOcclusionTexture
+// material.aoMapIntensity = 1
+// material.displacementMap = doorHeightTexture
+// material.displacementScale = 0.1
+// material.metalnessMap = doorMetalnessTexture
+// material.roughnessMap = doorRoughnessTexture
+// material.normalMap = doorNormalTexture
+// material.normalScale.set(0.5, 0.5)
+
+// gui.add(material, 'metalness').min(0).max(1).step(0.0001)
+// gui.add(material, 'roughness').min(0).max(1).step(0.0001)
+
+//Tüm önceki özellikler destekleniyor çünkü MeshPhysicalMaterial, MeshStandardMaterial'dan miras alıyor ve artık bu yeni özelliklere 
+//erişebiliyoruz. Bu temel materyali koruyarak bunları ayrı ayrı deneyeceğiz.
+
+//Clearcoat
+//Şeffaf vernik(Clearcoat), gerçek malzemenin üstünde ince bir vernik tabakasını simüle edecektir. Bu katmanın kendi yansıtıcı özellikleri vardır ve 
+//biz hala arkasındaki varsayılan malzemeyi görebiliriz.
+
+//Örnek:https://threejs.org/examples/#webgl_materials_physical_clearcoat
+
+//Clearcoat ve clearcoatRoughness özelliklerini ilgili ayarlamalarıyla birlikte ekleyin:
+
+// // Clearcoat
+// material.clearcoat = 1
+// material.clearcoatRoughness = 0
+
+// gui.add(material, 'clearcoat').min(0).max(1).step(0.0001)
+// gui.add(material, 'clearcoatRoughness').min(0).max(1).step(0.0001)
+
+//Sanki aynı malzemenin üstünde bir cam varmış gibi.
+
+//Sheen
+//Parlaklık, dar bir açıdan bakıldığında malzemeyi vurgulayacaktır. Bu etkiyi genellikle kumaş gibi kabarık malzemelerde görebiliriz.
+
+//Örnek:https://threejs.org/examples/?q=sheen#webgl_loader_gltf_sheen
+
+//Clearcoat kısmını yorum satırına alın.
+
+//Sheen, sheenRoughness ve sheenColor özelliklerini ilgili ayarlamalarıyla ekleyin:
+
+// // Sheen
+// material.sheen = 1
+// material.sheenRoughness = 0.25
+// material.sheenColor.set(1, 1, 1)
+
+// gui.add(material, 'sheen').min(0).max(1).step(0.0001)
+// gui.add(material, 'sheenRoughness').min(0).max(1).step(0.0001)
+// gui.addColor(material, 'sheenColor')
+
+//Yine bu efekt dar bir açıdan bakıldığında malzemeye uygulanır. Kumaş benzeri malzemelerle en iyi şekilde çalışsa da, malzemenin 
+//yumuşak hissettirmesini sağlar.
+
+//Iridescence
+//İridescence, yakıt birikintisi, sabun köpüğü veya bunları hatırlayabilecek yaşta olanlar için LaserDisc'ler gibi renk eserlerini 
+//görebildiğimiz bir etkidir.
+
+//Örnek:https://threejs.org/examples/?q=anis#webgl_loader_gltf_anisotropy
+
+//Sheen kısmını yorumlayın.
+
+//İridescence, iridescenceIOR ve iridescenceThicknessRange özelliklerini ilgili ayarlamalarıyla ekleyin:
+
+// // Iridescence
+// material.iridescence = 1
+// material.iridescenceIOR = 1
+// material.iridescenceThicknessRange = [ 100, 800 ]
+
+// gui.add(material, 'iridescence').min(0).max(1).step(0.0001)
+// gui.add(material, 'iridescenceIOR').min(1).max(2.333).step(0.0001)
+// gui.add(material.iridescenceThicknessRange, '0').min(1).max(1000).step(1)
+// gui.add(material.iridescenceThicknessRange, '1').min(1).max(1000).step(1)
+
+//Transmission
+//Transmission, ışığın malzemeden geçmesini sağlayacaktır. Bu, sadece opaklık içeren şeffaflıktan daha fazlasıdır çünkü nesnenin arkasındaki 
+//görüntü deforme olur.
+
+//Örnek:https://threejs.org/examples/?q=physica#webgl_materials_physical_transmission_alpha
+
+//İridescence kısmını yorumlayın.
+
+//Transmisyon, ior ve thickness  özelliklerini ilgili ayarlamalarıyla ekleyin:
+
+// // Transmission
+// material.transmission = 1
+// material.ior = 1.5
+// material.thickness = 0.5
+
+// gui.add(material, 'transmission').min(0).max(1).step(0.0001)
+// gui.add(material, 'ior').min(1).max(10).step(0.0001)
+// gui.add(material, 'thickness').min(0).max(1).step(0.0001)
+
+//Nesneler yarı saydam hissedilir.
+
+//ior, Kırılma İndeksi anlamına gelir ve simüle etmek istediğiniz malzeme türüne bağlıdır.
+
+//Bir elmasın ior'u 2,417, suyun ior'u 1,333 ve havanın ior'u 1,000293'tür.
+
+//Tüm listeyi Wikipedia'da bulabilirsiniz https://en.wikipedia.org/wiki/List_of_refractive_indices
+
+//Kalınlık sabit bir değerdir ve nesnenin gerçek kalınlığı hesaba katılmaz.
+
+//Şu anda, malzememizi bozan birçok haritamız var, ancak iletim saf bir malzemeyle de gerçekten iyi görünüyor.
+
+//Tüm haritaları kaldırın veya yorumlayın ve metalliği ve pürüzlülüğü 0 olarak ayarlayın:
+
+// const material = new THREE.MeshPhysicalMaterial()
+// material.metalness = 0
+// material.roughness = 0
+// // material.map = doorColorTexture
+// // material.aoMap = doorAmbientOcclusionTexture
+// // material.aoMapIntensity = 1
+// // material.displacementMap = doorHeightTexture
+// // material.displacementScale = 0.1
+// // material.metalnessMap = doorMetalnessTexture
+// // material.roughnessMap = doorRoughnessTexture
+// // material.normalMap = doorNormalTexture
+// // material.normalScale.set(0.5, 0.5)
+// // material.transparent = true
+// // material.alphaMap = doorAlphaTexture
 
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import GUI from 'lil-gui'
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js' //environment map kullanmak için bu özelliği kullanacağız
 import "./style.css"
 
 /**
@@ -554,45 +820,150 @@ matcapTexture.colorSpace = THREE.SRGBColorSpace
 // gradientTexture.magFilter = THREE.NearestFilter
 // gradientTexture.generateMipmaps = false
 
-// MeshStandardMaterial
-const material = new THREE.MeshStandardMaterial()
-material.metalness = 0.45
-material.roughness = 0.65
+// // MeshStandardMaterial
+// const material = new THREE.MeshStandardMaterial()
+// material.metalness = 1
+// material.roughness = 1
+
+// material.map = doorColorTexture
+
+// material.aoMap = doorAmbientOcclusionTexture
+// material.aoMapIntensity = 1
+
+// material.displacementMap = doorHeightTexture
+
+// material.displacementScale = 0.1 
+
+// material.metalnessMap = doorMetalnessTexture
+// material.roughnessMap = doorRoughnessTexture
+
+// material.normalMap = doorNormalTexture
+
+// material.normalScale.set(0.5, 0.5)
+
+// material.transparent = true
+// material.alphaMap = doorAlphaTexture
+
+// gui.add(material, 'metalness').min(0).max(1).step(0.0001)
+// gui.add(material, 'roughness').min(0).max(1).step(0.0001)
+
+/**
+ * MeshPhysicalMaterial
+ */
+// // Base material
+// const material = new THREE.MeshPhysicalMaterial()
+// material.metalness = 1
+// material.roughness = 1
+// material.map = doorColorTexture
+// material.aoMap = doorAmbientOcclusionTexture
+// material.aoMapIntensity = 1
+// material.displacementMap = doorHeightTexture
+// material.displacementScale = 0.1
+// material.metalnessMap = doorMetalnessTexture
+// material.roughnessMap = doorRoughnessTexture
+// material.normalMap = doorNormalTexture
+// material.normalScale.set(0.5, 0.5)
+// material.transparent = true
+// material.alphaMap = doorAlphaTexture
+
+// // Clearcoat
+// material.clearcoat = 1
+// material.clearcoatRoughness = 0
+
+// gui.add(material, 'clearcoat').min(0).max(1).step(0.0001)
+// gui.add(material, 'clearcoatRoughness').min(0).max(1).step(0.0001)
+
+// // Sheen
+// material.sheen = 1
+// material.sheenRoughness = 0.25
+// material.sheenColor.set(1, 1, 1)
+
+// gui.add(material, 'sheen').min(0).max(1).step(0.0001)
+// gui.add(material, 'sheenRoughness').min(0).max(1).step(0.0001)
+// gui.addColor(material, 'sheenColor')
+
+// // Iridescence
+// material.iridescence = 1
+// material.iridescenceIOR = 1
+// material.iridescenceThicknessRange = [ 100, 800 ]
+
+// gui.add(material, 'iridescence').min(0).max(1).step(0.0001)
+// gui.add(material, 'iridescenceIOR').min(1).max(2.333).step(0.0001)
+// gui.add(material.iridescenceThicknessRange, '0').min(1).max(1000).step(1)
+// gui.add(material.iridescenceThicknessRange, '1').min(1).max(1000).step(1)
+
+//Bu kısım transmission için kullanılır diğer materialler için üs kısımı yorum satırından kaldırıp burayı yorum satırına alabilirz.
+const material = new THREE.MeshPhysicalMaterial()
+material.metalness = 0
+material.roughness = 0
+// material.map = doorColorTexture
+// material.aoMap = doorAmbientOcclusionTexture
+// material.aoMapIntensity = 1
+// material.displacementMap = doorHeightTexture
+// material.displacementScale = 0.1
+// material.metalnessMap = doorMetalnessTexture
+// material.roughnessMap = doorRoughnessTexture
+// material.normalMap = doorNormalTexture
+// material.normalScale.set(0.5, 0.5)
+// material.transparent = true
+// material.alphaMap = doorAlphaTexture
+
+// Transmission
+material.transmission = 1
+material.ior = 1.5
+material.thickness = 0.5
+
+gui.add(material, 'transmission').min(0).max(1).step(0.0001)
+gui.add(material, 'ior').min(1).max(10).step(0.0001)
+gui.add(material, 'thickness').min(0).max(1).step(0.0001)
 
 gui.add(material, 'metalness').min(0).max(1).step(0.0001)
 gui.add(material, 'roughness').min(0).max(1).step(0.0001)
 
-
 const sphere = new THREE.Mesh(
-    new THREE.SphereGeometry(0.5, 16, 16),
+    new THREE.SphereGeometry(0.5, 64, 64),
     material
 )
 sphere.position.x = - 1.5
 
 const plane = new THREE.Mesh(
-    new THREE.PlaneGeometry(1, 1),
+    new THREE.PlaneGeometry(1, 1, 100, 100),
     material
 )
 
 const torus = new THREE.Mesh(
-    new THREE.TorusGeometry(0.3, 0.2, 16, 32),
+    new THREE.TorusGeometry(0.3, 0.2, 64, 128),
     material
 )
 torus.position.x = 1.5
 
 scene.add(sphere, plane, torus)
 
-/**
- * Lights
- */
-const ambientLight = new THREE.AmbientLight(0xffffff, 1)
-scene.add(ambientLight)
+// /**
+//  * Lights
+//environment map eklediğimizde kendisi ışık için yeterli olduğundan light bölmümümüzü yorum satırına alabiliriz.
+//  */
+// const ambientLight = new THREE.AmbientLight(0xffffff, 1)
+// scene.add(ambientLight)
 
-const pointLight = new THREE.PointLight(0xffffff, 30)
-pointLight.position.x = 2
-pointLight.position.y = 3
-pointLight.position.z = 4
-scene.add(pointLight)
+// const pointLight = new THREE.PointLight(0xffffff, 30)
+// pointLight.position.x = 2
+// pointLight.position.y = 3
+// pointLight.position.z = 4
+// scene.add(pointLight)
+
+/**
+ * Environment map
+ */
+const rgbeLoader = new RGBELoader()
+rgbeLoader.load('./11-Materials/textures/environmentMap/2k.hdr', (environmentMap) =>
+{
+    //console.log(environmentMap)
+    environmentMap.mapping = THREE.EquirectangularReflectionMapping
+    
+    scene.background = environmentMap
+    scene.environment = environmentMap
+})
 
 /**
  * Camera
