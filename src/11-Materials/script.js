@@ -700,6 +700,36 @@
 // // material.transparent = true
 // // material.alphaMap = doorAlphaTexture
 
+//Güzel olan tarafı, hala pürüzlülükle oynayabilmemiz ve parlak bir sonuç elde edebilmemiz:
+
+//MeshPhysicalMaterial için hepsi bu kadar. Her olası özelliğini kontrol etmediğimizi ancak diğer özelliklerin o kadar alakalı olmadığını 
+//unutmayın.
+
+//Ayrıca, MeshPhysicalMaterial'in performans açısından en kötü malzeme olduğunu unutmayın. Bu malzemeyi ekranın çoğunu kaplayan birçok 
+//nesneye uygularsanız, her cihazda iyi bir kare hızı beklemeyin.
+
+//Materials for later
+//Ve sonra bu derste test etmeyeceğimiz materyaller var çünkü bunlara geçmeden önce biraz daha fazla bilgi edinmemiz gerekiyor; 
+//bu bilgiyi de kursun ilerleyen kısımlarında edineceğiz.
+
+//PointsMaterial
+//Parçacıkları, boyutlarını, renklerini, içlerinde ne çizildiğini vb. işlemek için PointsMaterial'ı kullanabilirsiniz.
+
+//ShaderMaterial and RawShaderMaterial
+//ShaderMaterial ve RawShaderMaterial, GLSL adlı özel bir dil kullanarak kendi materyallerinizi oluşturmak için kullanılabilir. 
+//O kadar karmaşık bir konudur ki, buna bütün bir bölüm ayrılmıştır.
+
+//SONUÇ
+//Bunlar birçok özelliği olan çok sayıda malzemeydi. Endişelenmeyin, pratik yapmak için tüm ders boyunca bunları kullanacağız.
+
+//Bunları dilediğiniz gibi düzenleyip Debug UI'a ekleyebilirsiniz.
+
+//Işıklar ve çevre haritaları gibi konuları da kavradık. Muhtemelen biraz bulanık hissettirseler de, daha önce de belirtildiği gibi, 
+//bu konuları özel dersler boyunca derinlemesine ele alacağız.
+
+//Son olarak, kullandığınız malzemelerin performans üzerinde büyük bir etkisi olabileceğini unutmayın. Özellikle mobil cihazlar gibi 
+//zayıf cihazlarda kare hızına her zaman dikkat edin.
+
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import GUI from 'lil-gui'
